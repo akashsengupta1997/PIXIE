@@ -91,7 +91,8 @@ def main(args):
                 visdict['head'] = data['body']['head_image']
                 visdict['left_hand'] = data['body']['left_hand_image'] # should be flipped
                 visdict['right_hand'] = data['body']['right_hand_image']
-            cv2.imwrite(os.path.join(savefolder, f'{name}_vis.jpg'), visualizer.visualize_grid(visdict, size=args.render_size))
+            # cv2.imwrite(os.path.join(savefolder, f'{name}_vis.jpg'), visualizer.visualize_grid(visdict, size=args.render_size))
+            cv2.imwrite(os.path.join(savefolder, f'{str(i).zfill(5)}_vis.jpg'), visualizer.visualize_grid(visdict, size=args.render_size))
             # print(os.path.join(savefolder, f'{name}_vis.jpg'))
             # import ipdb; ipdb.set_trace()
             # exit()
@@ -108,8 +109,15 @@ def main(args):
         if args.saveImages:
             for vis_name in visdict.keys():
                 cv2.imwrite(os.path.join(savefolder, name, f'{name}_{vis_name}.jpg'), util.tensor2image(visdict[vis_name][0]))
-                       
+
+    if args.frames_to_vid:
+        frames_to_vid_cmd = f"ffmpeg -loglevel error -framerate {args.vid_fps} -i {os.path.join(savefolder, '%05d_vis.jpg')} -pix_fmt yuv420p " \
+                            f" {os.path.join(savefolder, os.path.basename(savefolder) + '_vis.mp4')}"
+        print("\nConverting frames to video with:", frames_to_vid_cmd)
+        os.system(frames_to_vid_cmd)
+
     print(f'-- please check the results in {savefolder}')
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PIXIE')
@@ -162,4 +170,8 @@ if __name__ == '__main__':
                         help='whether to save smplx prediction as pkl file' )
     parser.add_argument('--saveImages', default=False, type=lambda x: x.lower() in ['true', '1'],
                         help='whether to save visualization output as seperate images' )
+
+    parser.add_argument('--frames_to_vid', action='store_true')
+    parser.add_argument('--vid_fps', type=int, default=12)
+
     main(parser.parse_args())
